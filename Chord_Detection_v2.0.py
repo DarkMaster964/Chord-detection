@@ -139,11 +139,15 @@ def find_ccp (key_id):
 def correction(interval):
     i = 0
     for duration in durations_simple:
-        if (duration == interval):           
+        if (duration == interval and i != 0):           
             print("Changed ", chord_prog_simple[i], " to ", chord_prog_simple[i - 1])
             chord_prog_simple[i] = chord_prog_simple[i - 1]
             # roman_index_prog[i] = roman_index_prog[i - 1]
         i = i + 1
+        if (i == len (durations_simple) - 1):
+            if (chord_prog_simple[i] == "None"):
+                print("Changed ", chord_prog_simple[i], " to ", chord_prog_simple[i - 1])
+                chord_prog_simple[i] = chord_prog_simple[i - 1]
 
 # nesto poput enuma za rimske oznake
 def roman_index(i):
@@ -208,8 +212,14 @@ def analyze_chunk(interval, fs, data_parts, duration, is_stereo = True): # rekur
 
     if (n_intervals > 1):
         for i in range (0, n_intervals):
-            data_chunk = np.append(data_chunk, data_parts[k])
-            k = k + 1
+            if (k != len(data_parts)):
+                data_chunk = np.append(data_chunk, data_parts[k])
+                k = k + 1
+            else:
+                print("Nothing found beetwen {0} and {1}".format(round(start, 1), round(end, 1)))
+                chord_prog.append("None")
+                durations.append(round(chunk, 1))
+                return "Done"
     else:
         data_chunk = data_parts[k]
         k = k + 1
@@ -251,7 +261,7 @@ def analyze_chunk(interval, fs, data_parts, duration, is_stereo = True): # rekur
 
         end = end + interval # moving end point by 1 interval
 
-        #print("Nothing found, increasing interval to {0}".format(round(end - start, 1)))
+        print("Nothing found, increasing interval to {0}".format(round(end - start, 1)))
 
         k = k - n_intervals
 
@@ -261,7 +271,7 @@ def analyze_chunk(interval, fs, data_parts, duration, is_stereo = True): # rekur
 # glavna funkcija
 def find_chord_progression(starting_interval, fs, data, is_stereo = True):
 
-    duration = round(len(data) / fs)   # duzina uzorka (s)
+    duration = round(len(data) / fs, 1)   # duzina uzorka (s)
     print("Duration is: ", duration)
 
     n_parts = duration / starting_interval
@@ -347,7 +357,7 @@ def do_fft(fs, data, is_stereo):
 def main():
     t1 = time.time()
 
-    address = "F:\\Skola\\Projekat\\AmCGG.wav" # adresa fajla (.wav format)
+    address = "F:\\Skola\\Projekat\\AmCG_quick.wav" # adresa fajla (.wav format)
     fs, data = wavfile.read(address)
     starting_interval = 0.1 # sekundi
     is_stereo = False
