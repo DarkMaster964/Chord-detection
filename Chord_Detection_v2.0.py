@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from math import log2, pow
 from pychord import note_to_chord, Chord
 import time
+import csv
 
 # globalne promenljive
 chrom_scale = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ]
@@ -46,6 +47,39 @@ end = 0
 
 once = True
 
+def save_results(name, results_address, key_id = "None"):
+    file_name = "{0}{1}.csv".format(results_address, name)
+    with open(file_name, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=' ')
+        i = 0
+        j = 0
+        for chord in chord_prog_simple:
+            if (key_id != "None"):
+                try:
+                    i = chords_in_every_key[key_id].index(chord)
+                    in_key = True
+                except:
+                    in_key = False
+            
+                try:
+                    m = roman_index_prog.index(roman_index(i))
+                except:
+                    roman_index_prog.append(roman_index(i))
+        
+                if (in_key):
+                    writer.writerow([chord, roman_index(i), str(round(durations_simple[j], 1))])
+                    j = j + 1
+                else:
+                    writer.writerow([chord, " out of key ", str(round(durations_simple[j], 1))])
+                    j = j + 1
+            else:
+                writer.writerow([chord, str(round(durations_simple[j], 1))])
+                j = j + 1
+
+            if (chord_prog_simple.index(chord) == len(chord_prog_simple) - 1):
+                writer.writerow([])
+
+    
 def simplify ():
     global chord_prog, chord_prog_simple, durations, durations_simple
     i = 0
@@ -357,24 +391,21 @@ def do_fft(fs, data, is_stereo):
 def main():
     t1 = time.time()
 
-    address = "F:\\Skola\\Projekat\\AmCG_quick.wav" # adresa fajla (.wav format)
+    file_name = "AmCGG"
+    address = "F:\\Skola\\Projekat\\{0}.wav".format(file_name) # adresa fajla (.wav format)
+    results_address = "F:\\Skola\\Projekat\\Results\\"
+
     fs, data = wavfile.read(address)
     starting_interval = 0.1 # sekundi
     is_stereo = False
 
     find_chord_progression(starting_interval, fs, data, is_stereo)
 
-    print("Raw: ",chord_prog, "\n there is ", len(chord_prog))
-    print("Durations: ",durations, "\n there is ", len(durations))
-
-    print()
     simplify()
-
-    print("SImplified chords: ",chord_prog_simple)
-    print("Simplified durations:", durations_simple)
 
     print("\nChord progression ( with durations ) before correction is: ")
     output_results()
+    save_results(file_name, results_address)
 
     print("\nMaking corrections...")
     correction(starting_interval)
@@ -384,8 +415,11 @@ def main():
 
     print("Chord progression ( with durations ) after correction is as following:")
     output_results(key_id)
+    save_results("{0}_corrected".format(file_name), results_address, key_id)
 
     find_ccp(key_id)
+
+    # save_results()
     
     t2 = time.time()
     t = t2 - t1
